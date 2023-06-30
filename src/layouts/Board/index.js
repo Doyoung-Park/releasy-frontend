@@ -100,6 +100,18 @@ const projectMock = {
       updatedAt: '2023-06-29',
     },
     //... more issues as needed
+    {
+      id: 2,
+      title: 'Issue 7',
+      type: 'task',
+      description: 'Description for Issue 2',
+      status: 'backlog',
+      listPosition: 2,
+      priority : 1,
+      userIds: [2],
+      updatedAt: '2023-06-29',
+    },
+    //... more issues as needed
   ],
 };
 
