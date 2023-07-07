@@ -61,8 +61,6 @@ function OtherTeams() {
 
           <Grid item xs={12} id="right" container
             direction="row"
-            justifyContent="right"
-            alignItems="right"
             lg={200}>
             <Card>
               <MDBox
@@ -91,10 +89,10 @@ function OtherTeams() {
             </Card>
           </Grid>
           </Stack>
-        {/* </Grid> */}
-    
-      </MDBox>
+          </MDBox>
+          
       <Footer />
+
     </DashboardLayout>
   );
 }
