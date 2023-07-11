@@ -1,8 +1,6 @@
-import React, { Fragment } from 'react';
+import React, { Fragment, useState } from 'react';
 import PropTypes from 'prop-types';
 
-import api from 'shared/utils/api';
-import useApi from 'shared/hooks/api';
 import { PageError, CopyLinkButton, Button, AboutTooltip } from 'shared/components';
 
 import Loader from './Loader';
@@ -23,7 +21,6 @@ const propTypes = {
   projectUsers: PropTypes.array.isRequired,
   fetchProject: PropTypes.func.isRequired,
   updateLocalProjectIssues: PropTypes.func.isRequired,
-  modalClose: PropTypes.func.isRequired,
 };
 
 const ProjectBoardIssueDetails = ({
@@ -31,28 +28,22 @@ const ProjectBoardIssueDetails = ({
   projectUsers,
   fetchProject,
   updateLocalProjectIssues,
-  modalClose,
 }) => {
-  const [{ data, error, setLocalData }, fetchIssue] = useApi.get(`/issues/${issueId}`);
+  const [issue, setIssue] = useState({
+    id: 7,
+    title: 'Issue 7',
+    type: 'task',
+    description: 'Description for Issue 2',
+    status: 'done',
+    listPosition: 1,
+    priority: 1,
+    userIds: [2],
+    updatedAt: '2023-06-29',
+  });
 
-  if (!data) return <Loader />;
-  if (error) return <PageError />;
-
-  const { issue } = data;
-
-  const updateLocalIssueDetails = fields =>
-    setLocalData(currentData => ({ issue: { ...currentData.issue, ...fields } }));
-
-  // const updateIssue = updatedFields => {
-  //   api.optimisticUpdate(`/issues/${issueId}`, {
-  //     updatedFields,
-  //     currentFields: issue,
-  //     setLocalData: fields => {
-  //       updateLocalIssueDetails(fields);
-  //       updateLocalProjectIssues(issue.id, fields);
-  //     },
-  //   });
-  // };
+  const updateIssue = updatedFields => {
+    setIssue(currentIssue => ({ ...currentIssue, ...updatedFields }));
+  };
 
   return (
     <Fragment>
@@ -67,15 +58,12 @@ const ProjectBoardIssueDetails = ({
             )}
           />
           <CopyLinkButton variant="empty" />
-          <Delete issue={issue} fetchProject={fetchProject} modalClose={modalClose} />
-          <Button icon="close" iconSize={24} variant="empty" onClick={modalClose} />
         </TopActionsRight>
       </TopActions>
       <Content>
         <Left>
           <Title issue={issue} updateIssue={updateIssue} />
           <Description issue={issue} updateIssue={updateIssue} />
-          <Comments issue={issue} fetchIssue={fetchIssue} />
         </Left>
         <Right>
           <Status issue={issue} updateIssue={updateIssue} />
