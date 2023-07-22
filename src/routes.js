@@ -35,6 +35,7 @@ import MyPage from "layouts/project/pages/myPage";
 import Icon from "@mui/material/Icon";
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import Release from "layouts/release";
+import ViewRelease from "layouts/release/create";
 
 const routes = [
   {
@@ -149,19 +150,13 @@ const routes = [
     route: "/home",
     component: <Home />,
   },
-
-
-
   {
     type: "",
     name: "",
     key: "create-release",
-    route: "release/",
+    route: "/release/create",
     component: <CreateRelease />
   },
-
-
-
   {
     type: "",
     name: "",
@@ -186,25 +181,6 @@ const routes = [
     component: <MyPage />,
   },
 ];
-
-//    /home/project/new
-//   {
-//     type: "",
-//     name: "",
-//     key: "home",
-//     icon: "",
-//     route: "/home/project/new",
-//     component: <NewProject />,
-//   },
-//   {
-//     type: "",
-//     name: "",
-//     key: "home",
-//     icon: "",
-//     route: "/home/mypage",
-//     component: <MyPage />,
-//   },
-// ];
 
 
 export default routes;

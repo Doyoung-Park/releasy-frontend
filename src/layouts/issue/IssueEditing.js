@@ -1,21 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import "./index.css"
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
-import Stack from '@mui/material/Stack';
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
-import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
-import DashboardNavbar from "examples/Navbars/DashboardNavbar";
-import Footer from "examples/Footer";
-import MDButton from 'components/MDButton';
-import MDProgress from 'components/MDProgress';
-import ProjectBoardListIssue from 'layouts/Board/Lists/List/Issue/ListAll';
-import IssueDetail  from "layouts/issue/IssueDetails/index";
+import Description from 'layouts/issue/IssueDetails/Description';
+import Comments from 'layouts/issue/IssueDetails/Comments';
 
 
-function IssueEditing({ selectedIssue }) {
-    console.log(selectedIssue);
+function IssueEditing({ issue, updateIssue, fetchedMemo }) {
+
+
+    // console.log("updateIssue",updateIssue);
+  
+    const [Memo, setMemo] = useState(fetchedMemo);
+  
+    useEffect(() => {
+      setMemo(fetchedMemo);
+    }, [updateIssue]);
+  
     return (
       <Grid item xs={12} id="right" container direction="column" lg={200}>
         <Card>
@@ -33,13 +36,50 @@ function IssueEditing({ selectedIssue }) {
               이슈 편집
             </MDTypography>
           </MDBox>
-          <MDBox pt={3} width="37vw" height="37vw">
-            <IssueDetail  />
-            {selectedIssue.title}
-          </MDBox>
+          <Grid item xs={12} >
+  
+            <MDBox pt={2} px={2}>
+          
+            </MDBox>
+            <MDBox pt={2} px={2} mb={2}>
+              <Card sx={{ backgroundColor: '#F0EDEE' }}>
+                <MDBox pt={2} px={2} pb={2}>
+                 
+                  <MDBox pt={2} px={2}>
+                    <MDTypography variant="body2">
+                      <Description issue={issue} updateIssue={updateIssue} />
+                    </MDTypography>
+                  </MDBox>
+                </MDBox>
+              </Card>
+            </MDBox>
+            <MDBox pt={2} px={2} mb={2}>
+              <Card sx={{ backgroundColor: '#F0EDEE' }}>
+                <MDBox pt={2} px={2} pb={2}>
+                  <Grid container spacing={0}>
+                    <Grid item xs={11} >
+                      <MDTypography variant="body2" fontWeight="medium" multiline fullWidth>
+                        댓글
+                      </MDTypography>
+                       <Comments issue={issue} memo={Memo} fetchedMemo={fetchedMemo} setMemo={setMemo}/>
+                    </Grid> 
+                    <Grid item xs={8}>
+                    </Grid>
+                    <Grid item xs={2}>
+                      <MDTypography variant="button">
+                      </MDTypography>
+                    </Grid>
+                  </Grid>
+                  <MDBox pt={2} px={2}>
+                  </MDBox>
+                </MDBox>
+              </Card>
+            </MDBox>
+          </Grid>
         </Card>
       </Grid>
     );
   }
-  
-export default IssueEditing;
+
+
+  export default IssueEditing;

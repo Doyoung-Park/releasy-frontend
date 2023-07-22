@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { useMatch  } from 'react-router-dom';
-import { Draggable } from 'react-beautiful-dnd';
-import Title1 from 'layouts/Board/IssueDetails/Title';
-import IssueEditing  from "layouts/issue/index";
-import IssueEdit  from "layouts/issue/IssueEditing";
+import MDBadge from 'components/MDBadge';
+import MDTypography from 'components/MDTypography';
 
 import { IssueTypeIcon, IssuePriorityIcon } from 'shared/components';
 
@@ -16,22 +13,44 @@ const propTypes = {
   index: PropTypes.number.isRequired,
 };
 
-const ProjectBoardListIssue = ({ projectUsers, issue, index }) => {
+const ProjectBoardListIssue = ({ projectUsers, issue, index,selected }) => {
 
-  const [selectedIssue, setSelectedIssue] = useState(null);
 
-  const assignees = issue.userIds.map(userId => projectUsers.find(user => user.id === userId));
+  // const assignees = issue.map(userId => projectUsers.find(user => user.id === userId));
+
+  const getStatusColor = (status) => {
+    switch (status) {
+        case 'done':
+            return 'success';
+        case 'backlog':
+            return 'dark';
+        case 'inprogress':
+            return 'warning';
+        default:
+            return 'default';
+    }
+}
+
+const getPriorityColor = (priority) => {
+    if (priority >= 90) {
+        return 'error';
+    } else if (priority < 90 && priority >= 50) {
+        return 'warning';
+    } else {
+        return 'info';
+    }
+}
   
   return (
     
     <div>
-      <IssueLink>
+      {/* <IssueLink>
         <Issue>
           <Title>{issue.title}</Title>
           <Bottom>
             <div>
-              <IssueTypeIcon type={issue.type} />
-              <IssuePriorityIcon priority={issue.priority} top={-1} left={4} />
+              <IssueTypeIcon type={issue.status} />
+              <IssuePriorityIcon priority={issue.importance} top={-1} left={4} />
             </div>
             <Assignees>
               {assignees.map(user => (
@@ -45,9 +64,31 @@ const ProjectBoardListIssue = ({ projectUsers, issue, index }) => {
             </Assignees>
           </Bottom>
         </Issue>
-        {selectedIssue && <IssueEdit selectedIssue={selectedIssue} />}
       </IssueLink>
-      
+       */}
+
+<Issue selected={selected}>
+    <Title>#{issue.issueNum} {issue.title}
+        
+    </Title>
+    <MDBadge
+            badgeContent={issue.status}
+            color={getStatusColor(issue.status)}
+            variant="gradient"
+            size="sm"
+        />
+
+        <MDBadge
+            badgeContent={issue.issueType}
+            color={getPriorityColor(issue.importance)}
+            variant="gradient"
+            size="sm"
+        />
+    {/* <Bottom>
+    </Bottom> */}
+    <br/>
+    &nbsp;&nbsp;<MDTypography variant="caption" fontWeight="light">담당자: {issue.memberIdInCharge.name}</MDTypography>
+</Issue>
       
     
     </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import "./index.css"
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
@@ -7,249 +7,397 @@ import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
-import Footer from "examples/Footer";
-import MDButton from 'components/MDButton';
 import MDProgress from 'components/MDProgress';
 import ProjectBoardListIssue from 'layouts/Board/Lists/List/Issue/ListAll';
-import IssueDetail from "layouts/issue/IssueDetails/index";
-import IssueEdit from "layouts/issue/IssueEditing";
 import MDInput from 'components/MDInput';
-import InputLabel from '@mui/material/InputLabel';
-import FormHelperText from '@mui/material/FormHelperText';
-import FormControl from '@mui/material/FormControl';
 import Description from 'layouts/issue/IssueDetails/Description';
 import Comments from 'layouts/issue/IssueDetails/Comments';
-import PostViewPage from 'layouts/issue/page/PostViewPage'
+import { Icon, IconButton, Menu, MenuItem } from "@mui/material";
+import axios from 'axios';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
+import {IssueSearchBar,IssueSearchBarCopy,IssueStatus,IssueStatusCopy,IssueType,IssueTypeCopy} from "shared/constants/issues"
+import Button from '@mui/material/Button';
+import IssueDetails from './IssueDetails';
+import IssueEditing from './IssueEditing';
+
 
 function IssueSearch() {
-  const { issues, users } = window.projectMock;
-  console.log("window", window.projectMock);
-  console.log("issues:", issues);
-  console.log("users:", users);
+  const [fetchedIssues, setFetchedIssues] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const projectId = 1;
+  const token = localStorage.getItem('ACCESS_TOKEN');
+  const [issueDetail, setIssueDetail] = useState([]);
+  const [fetchedMemo, setFetchedMemo] = useState([]);
+  const [membersData, setMembersData] = useState([]); //프로젝트에 속한 멤버들 정보
+  const [filter,setFilter] = useState("");
+  const [init,setInit] = useState(false);
+  const [searchBar,setSearchBar] = useState();
+  const [searchFilter,setSearchFilter] = useState();
+  const [firstfilter,setFirstfilter] = useState("");
+  const [secfilter,setSecfilter] = useState("");
+  const [thirdfilter,setThridfilter] = useState("");
+  const [selectedIssueIndex, setSelectedIssueIndex] = useState(0);
+
+
+  const memberList2 = membersData && membersData.map((member) => (
+    <MenuItem value={member.name}>
+        {member.name}
+    </MenuItem>
+));
+
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const issuesResponse = await axios.get(`/api/${projectId}/issues`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        setFetchedIssues(issuesResponse.data.data);
+      
+        const membersResponse = await axios.get(`/api/project/${encodeURIComponent(projectId)}/members`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setMembersData(membersResponse.data.data);
+        setIssueDetail(issuesResponse.data.data[0]);
+
+        {!issuesResponse.data.data[0] ? setIsLoading(true) : setIsLoading(false)}
+        
+      } catch (error) {
+        console.error(error);
+      }
+    };
+  
+    fetchData();
+  }, [projectId, token]);
+
+
+
+  useEffect(() => {
+    const fetchMemo = async () => {
+      try {
+        console.log(`Fetching memo for projectId=${projectId}, issueId=${issueDetail.id}`);
+        const response = await axios.get(`/api/memo/${projectId}/${issueDetail.id}`);
+        console.log('Response:', response.data.data);
+        setFetchedMemo(response.data.data);
+        
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+
+   
+      fetchMemo();
+    
+  }, [!issueDetail ? null : issueDetail.id]);
+
+  
+
+  
+    const updateIssue = async (updatedFields) => {
+    try {
+      // API를 호출하여 이슈 업데이트
+      const response = await axios.put(`/api/${projectId}/issues/${issueDetail.id}`, updatedFields, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+
+      // 업데이트된 이슈를 반영하기 위해 fetchedIssues 배열에서 해당 이슈를 찾아 업데이트
+      const updatedIssues = fetchedIssues.map((issue) => {
+        if (issue.id === issueDetail.id) {
+          return {
+            ...issue,
+            ...updatedFields
+          };
+        }
+        return issue;
+      });
+
+      // 업데이트된 이슈 목록을 설정
+      setFetchedIssues(updatedIssues);
+
+      // 이슈 상세 정보 업데이트
+      setIssueDetail((prevIssue) => ({
+        ...prevIssue,
+        ...updatedFields
+      }));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+
+  const handleFilter = (event) => {
+    const selectedValue = event.target.value;
+    const newFilter = [...filter, selectedValue];
+    setFilter((prevFilters) => [...prevFilters, selectedValue]);
+
+    
+    var filters = {
+      status: null,
+      type: null,
+      username: null,
+    };
+  
+    for (let i = 0; i < newFilter.length; i++) {
+      if (newFilter[i].toUpperCase() in IssueStatus) {
+        filters.status = newFilter[i];
+      } else if (newFilter[i].toUpperCase() in IssueType) {
+        filters.type = newFilter[i];
+      } else if (membersData.some(member => member.name === newFilter[i])) {
+        filters.username = newFilter[i];
+      }
+    }
+    
+    let url = "/api/1/issues?";
+    
+
+    for (const [key, value] of Object.entries(filters)) {
+
+      if(value == null){
+        continue;
+      }
+      url += `${key}=${value}&`;
+    }
+
+    console.log("url",url);
+    filterIssue(url);
+  };
+  
+
+  const filterIssue = async (url) => {
+    try {
+      
+      // URL에서 마지막 '&' 문자 제거
+      url = url.slice(0, -1);
+
+      // API 호출하여 이슈 업데이트
+      const response = await axios.get(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      // 필터링된 이슈 목록 설정
+      setFetchedIssues(response.data.data);
+      setInit(true);
+      setSelectedIssueIndex(0);
+      setIssueDetail(response.data.data[0])
+      {response.data.data[0] == undefined  ? setIsLoading(true) : setIsLoading(false)}
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  
+  const handleFilterstatus = (event) =>{
+    const selectedValue = event.target.value;
+    setFirstfilter(selectedValue)
+  }
+
+  
+
+  const handleFiltertype = (event) =>{
+    const selectedValue = event.target.value;
+    setSecfilter(selectedValue)
+  }
+
+  const handleFiltermember = (event) =>{
+    const selectedValue = event.target.value;
+    setThridfilter(selectedValue)
+  }
+
+
+  
+
+  const handleRefresh = () => {
+    setFirstfilter("");
+    setSecfilter("");
+    setThridfilter("");
+    filterIssue("/api/1/issues?"); 
+  }
+
+
+  const handleSearchFilterChange = (event) => {
+    setSearchFilter(event.target.value);
+  };
+
+  const handleSearchBarChange = (event) => {
+    setSearchBar(event.target.value);
+  };
+  
+  const handleClick = (issue,issueIndex) => {
+    setIssueDetail(issue);
+    setSelectedIssueIndex(issueIndex);
+    setInit(false);
+    
+  };
+  
+
+
+
+  console.log("init",init);
 
   return (
     <DashboardLayout>
       <DashboardNavbar />
-      <MDBox pt={6} pb={3}>
+      <MDBox pt={0.5} pb={3}>
+      <MDBox pt={0} pb={6}>
+          <Select
+              labelId="searchbar-select-label"
+              id="searchbar-select"
+              value={searchFilter}
+              onChange={
+                handleSearchFilterChange
+              }
+              sx={{ minHeight: 40 }}
+              displayEmpty 
+            >
+            <MenuItem disabled>
+          이슈 검색 필터
+        </MenuItem>
+          {Object.values(IssueSearchBar).map(status => (
+            <MenuItem key={status} value={status}>
+              {IssueSearchBarCopy[status]}
+            </MenuItem>
+          ))}     
+        </Select>
+        
+        <MDInput variant="standard" defaultValue={searchBar} onChange={handleSearchBarChange} style={{ paddingTop: '12px' }}/>
+           
+        &nbsp; &nbsp; &nbsp;
+
+        <Select
+          labelId="filter-select-label"
+          id="filter-select"
+          value={firstfilter}
+          onChange={(event) => {
+            handleFilter(event);
+            handleFilterstatus(event);
+          }}
+          sx={{ minHeight: 40 }}
+          displayEmpty 
+          renderValue={(value) => value === "" ? "상태" : `상태 : ${value}`}
+        >
+        <MenuItem disabled>
+      상태 필터
+    </MenuItem>
+      {Object.values(IssueStatus).map(status => (
+        <MenuItem key={status} value={status}>
+          {IssueStatusCopy[status]}
+        </MenuItem>
+      ))}     
+    </Select>
+    &nbsp; &nbsp;
+
+          <Select
+        labelId="type-filter-select-label"
+        id="type-filter-select"
+        value={secfilter}
+        onChange={(event) => {
+          handleFilter(event);
+          handleFiltertype(event);
+        }}
+        sx={{ minHeight: 40 }}
+        displayEmpty
+        renderValue={(value) => value === "" ? "타입" : `타입 : ${value}`}
+        >
+          <MenuItem disabled>
+            타입 필터
+          </MenuItem>
+          {Object.values(IssueType).map(type => (
+            <MenuItem key={type} value={type}>
+              {IssueTypeCopy[type]}
+            </MenuItem>
+          ))}
+        </Select>
+        &nbsp; &nbsp;
+
+        <Select
+          labelId="demo-simple-select-helper-label"
+          id="demo-simple-select-helper"
+          value={thirdfilter}
+          onChange={(event) => {
+            handleFilter(event);
+            handleFiltermember(event);
+          }}
+          displayEmpty 
+          renderValue={(value) => value === "" ? "담당자" : `담당자 : ${value}`}
+          sx={{ minHeight: 40 }}
+          >
+              <MenuItem disabled>
+            해당 이슈 담당자
+          </MenuItem>
+          {memberList2}
+                </Select>
+          <Button onClick={handleRefresh}>새로고침</Button>
+                    </MDBox>
         <Stack direction="row" spacing={6}>
-          <IssueList issues={issues} users={users} />
+          <Grid container spacing={3}>
+            <Grid item xs={3} id="left">
+            
+              <Card>
+                <MDBox
+                  mx={2}
+                  mt={-3}
+                  py={3}
+                  px={2}
+                  variant="gradient"
+                  bgColor="info"
+                  borderRadius="lg"
+                  coloredShadow="info"
+                >
+                  <MDTypography variant="h6" color="white">
+                    이슈 목록 &nbsp;
+                  </MDTypography>
+                </MDBox>
+                
+                <MDBox pt={3} pr={2} pl={2} fullWidth>
+                {console.log("isLoading",isLoading)}
+                {isLoading ? (
+                  <MDTypography>There are no issues</MDTypography>
+                ) : (
+                  fetchedIssues.map((issue, index) => (
+                    <div
+                      key={issue.id}
+                      onClick={() => handleClick(issue,index)}
+                    >
+                
+                      <ProjectBoardListIssue 
+                        issue={issue}
+                        index={index}
+                        selected={selectedIssueIndex === index} 
+
+                      />
+                    </div>
+                    ))
+                  )}
+                </MDBox>
+              </Card>
+              
+            </Grid>
+            
+            {console.log("issueDetail1",issueDetail)}
+            {console.log("updateIssue1",updateIssue)}
+            {console.log("fetchedMemo1",fetchedMemo)}
+            <Grid item xs={5}>
+              {isLoading ? null : <IssueEditing issue={issueDetail} updateIssue={updateIssue} fetchedMemo={fetchedMemo} /> }
+            </Grid>
+            <Grid item xs={4}>
+              {isLoading ? null : <IssueDetails issue={issueDetail} membersData ={membersData} updateIssue={updateIssue}/> }
+            </Grid>
+          </Grid>
         </Stack>
       </MDBox>
-      <Footer />
+     
     </DashboardLayout>
   );
 }
 
 
-
-function IssueList({ issues, users }) {
-  const [issueDetail, setIssueDetail] = useState("");
-  const updateIssue = updatedFields => {
-    (currentIssue => ({ ...currentIssue, ...updatedFields }));
-  };
-
-  console.log("123",updateIssue)
-
-
-  const handleClick = (issue) => {
-    setIssueDetail(issue);
-  };
-
-  return (
-    <Grid container spacing={3}>
-      <Grid item xs={3} id="left">
-        <Card>
-          <MDBox
-            mx={2}
-            mt={-3}
-            py={3}
-            px={2}
-            variant="gradient"
-            bgColor="info"
-            borderRadius="lg"
-            coloredShadow="info"
-          >
-            <MDTypography variant="h6" color="white">
-              이슈 목록
-            </MDTypography>
-          </MDBox>
-          <MDBox pt={3} pr={2} pl={2} fullWidth>
-            {issues.map((issue, index) => (
-              <div onClick={() => handleClick(issue)}>
-                <ProjectBoardListIssue
-                  key={issue.id}
-                  projectUsers={users}
-                  issue={issue}
-                  index={index}
-                />
-              </div>
-            ))}
-          </MDBox>
-        </Card>
-      </Grid>
-
-      <Grid item xs={5 }>
-        <IssueEditing info={issueDetail} updateIssue={updateIssue} />
-      </Grid>
-
-      <Grid item xs={4}>
-        <IssueDetails info={issueDetail} />
-      </Grid>
-    </Grid>
-  );
-}
-
-
-function IssueEditing({ info,updateIssue }) {
-
-  console.log("updateIssue",updateIssue);
-  console.log("info",info);
-  return (
-    <Grid item xs={12} id="right" container direction="column" lg={200}>
-      <Card>
-        <MDBox
-          mx={2}
-          mt={-3}
-          py={3}
-          px={2}
-          variant="gradient"
-          bgColor="info"
-          borderRadius="lg"
-          coloredShadow="info"
-        >
-          <MDTypography variant="h6" color="white">
-            이슈 편집
-          </MDTypography>
-        </MDBox>
-
-        {/* <IssueDetail /> */}
-
-        <Grid item xs={12} >
-
-          <MDBox pt={2} px={2}>
-            <MDTypography variant="h6">
-              이슈 :&nbsp;
-              <MDInput variant="standard" defaultValue={info.title} multiline fullWidth />
-            </MDTypography>
-          </MDBox>
-          <MDBox pt={2} px={2} mb={2}>
-            <Card sx={{ backgroundColor: '#F0EDEE' }}>
-              <MDBox pt={2} px={2} pb={2}>
-                <MDTypography variant="body2" fontWeight="medium">
-                  세부 설명
-                </MDTypography>
-                <MDBox pt={2} px={2}>
-                  <MDTypography variant="body2">
-                    {/* <MDInput variant="standard" defaultValue={info.description} multiline fullWidth /> */}
-                    <Description issue={info} updateIssue={updateIssue} />
-                  </MDTypography>
-                </MDBox>
-              </MDBox>
-            </Card>
-          </MDBox>
-          <MDBox pt={2} px={2} mb={2}>
-            <Card sx={{ backgroundColor: '#F0EDEE' }}>
-              <MDBox pt={2} px={2} pb={2}>
-                <Grid container spacing={0}>
-                  <Grid item xs={11} >
-                    <MDTypography variant="body2" fontWeight="medium" multiline fullWidth>
-                      댓글
-                      
-                    </MDTypography>
-                    {info.length == 0 ?  null : <Comments issue={info} />}
-                    
-                  
-                  </Grid>
-                  
-                 
-                  <Grid item xs={8}>
-                  </Grid>
-                  <Grid item xs={2}>
-                    <MDTypography variant="button">
-
-                    </MDTypography>
-                  </Grid>
-                </Grid>
-                <MDBox pt={2} px={2}>
-
-                </MDBox>
-              </MDBox>
-            </Card>
-          </MDBox>
-
-        </Grid>
-
-      </Card>
-    </Grid>
-  );
-}
-
-function IssueDetails({ info }) {
-  console.log("iii", info)
-  return (
-    <Grid container xs={12} id="right"  direction="column" lg={200}>
-      <Card>
-        <MDBox
-          mx={2}
-          mt={-3}
-          py={3}
-          px={2}
-          variant="gradient"
-          bgColor="info"
-          borderRadius="lg"
-          coloredShadow="info"
-        >
-          <MDTypography variant="h6" color="white">
-            세부 정보
-          </MDTypography>
-        </MDBox>
-
-        {/* Your content */}
-        <Grid item xs={12}>
-          <Card>
-            <Grid container>
-              <Grid item xs={6}>
-                <MDBox pt={2} px={2}>
-                  <MDTypography variant="h6">생성 일자</MDTypography>
-                  <MDTypography variant="subtitle2" ml={10}>{info.updatedAt}</MDTypography>
-                </MDBox>
-              </Grid>
-              <Grid item xs={6}>
-                <MDBox pt={2} px={2}>
-                  <MDTypography variant="h6">릴리즈 일자</MDTypography>
-                  <MDTypography variant="subtitle2" ml={12}>{info.updatedAt}</MDTypography>
-                </MDBox>
-              </Grid>
-              <Grid item xs={12}>
-                <MDBox pt={2} px={2}>
-                  <MDTypography variant="h6">담당자</MDTypography>
-                  <MDTypography variant="subtitle2" ml={10}>{info.id}</MDTypography>
-                </MDBox>
-              </Grid>
-              <Grid item xs={12}>
-                <MDBox pt={2} px={2}>
-                  <MDTypography variant="h6">진행률</MDTypography>
-                  <MDProgress
-                    value={info.progress}
-                    color={info.progress < 30 ? "primary" : info.progress < 60 ? "error" : info.progress < 80 ? "warning" : "info"} variant="gradient" label={info.progress} />
-                </MDBox>
-              </Grid>
-              <Grid item xs={12}>
-                <MDBox pt={6} px={2} pb={3}>
-                  <MDTypography variant="subtitle2">
-                    백로그: 0<br />
-                    진행중: 0<br />
-                    완료: 0
-                  </MDTypography>
-                </MDBox>
-              </Grid>
-            </Grid>
-          </Card>
-        </Grid>
-      </Card>
-    </Grid>
-  );
-}
 
 
 export default IssueSearch;

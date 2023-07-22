@@ -14,8 +14,9 @@ Coded by www.creative-tim.com
 */
 
 // react-router-dom components
-import { Link } from "react-router-dom";
-import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 // @mui material components
 import Card from "@mui/material/Card";
@@ -29,16 +30,34 @@ import MDButton from "components/MDButton";
 
 // Authentication layout components
 import BasicLayout from "layouts/authentication/components/BasicLayout";
+import CreateGroup from "./creategroup";
 
 // Images
 import bgImage from "assets/images/bgtmp.png";
 
 function Cover() {
+
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const provider = searchParams.get('provider');
+  const oauthEmail = searchParams.get("email");
+  const oauthName = searchParams.get('username');
+
+
+  
   const [name, setName] = useState("");
   const [nickname, setNickname] = useState("");
-  const [job, setJob] = useState("");
+  const [position, setPosition] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+    
+  useEffect(() => {
+    if (oauthEmail !== "" && oauthName !== "") {
+      setEmail(oauthEmail);
+      setName(oauthName);
+    }
+  }, []);
 
   const handleNameChange = (event) => {
     setName(event.target.value);
@@ -48,8 +67,8 @@ function Cover() {
     setNickname(event.target.value);
   };
 
-  const handleJobChange = (event) => {
-    setJob(event.target.value);
+  const handlePositionChange = (event) => {
+    setPosition(event.target.value);
   };
 
   const handleEmailChange = (event) => {
@@ -60,11 +79,28 @@ function Cover() {
     setPassword(event.target.value);
   };
 
+  const handleCreateGroupOnClick = () => {
+    navigate("/create-group", {
+      state: {
+        provider,
+        name,
+        nickname,
+        position,
+        email,
+        password
+      }
+    });
+  }
+
   const isNameEmpty = name === "";
   const isNicknameEmpty = nickname === "";
-  const isJobEmpty = job === "";
-  const isEmailEmpty = (email === "") || !(email.includes("@"));
+  const isPositionEmpty = position === "";
+  const isEmailEmpty = ((email === oauthEmail && oauthEmail === null) || email === "" ? true : false);
+  const isEmailWrong = !(email && email.includes("@"));
   const isPasswordEmpty = password === "";
+  const isPasswordUnderEight = password.length < 8;
+
+  console.log(`oauthEmail: ${oauthEmail}, isEmailEmpty: ${isEmailEmpty}, isEmailWrong: ${isEmailWrong}`);
 
   return (
     <BasicLayout image={bgImage}>
@@ -91,47 +127,47 @@ function Cover() {
         <MDBox pt={4} pb={3} px={3}>
           <MDBox component="form" role="form">
             <MDBox mb={2}>
-              <MDInput type="text" label="이름" variant="standard" fullWidth value={name} onChange={handleNameChange} required/>
+              <MDInput type="text" label="이름" variant="standard" fullWidth defaultValue={oauthName ? oauthName : ""} onChange={handleNameChange}  disabled={!!oauthName} />
             </MDBox>
             <MDBox mb={2}>
               <MDInput type="text" label="닉네임" variant="standard" fullWidth value={nickname} onChange={handleNicknameChange} required/>
             </MDBox>
             <MDBox mb={2}>
-              <MDInput type="text" label="직무 (예시: FE, BE)" variant="standard" fullWidth value={job} onChange={handleJobChange} required/>
+              <MDInput type="text" label="직무 (예시: FE, BE)" variant="standard" fullWidth value={position} onChange={handlePositionChange} required/>
             </MDBox>
             <MDBox mb={2}>
-              <MDInput type="email" label="이메일" variant="standard" fullWidth value={email} onChange={handleEmailChange} required/>
+              <MDInput type="email" label="이메일" variant="standard" fullWidth defaultValue={oauthEmail ? oauthEmail : ""} onChange={handleEmailChange}  disabled={!!oauthEmail}/>
+              {(!isEmailEmpty && isEmailWrong) ? (<MDTypography fontWeight="light" color="error" variant="caption">&nbsp;&nbsp;이메일 형식이 틀립니다.</MDTypography>) : <MDTypography> </MDTypography>}
             </MDBox>
             <MDBox mb={2}>
               <MDInput type="password" label="비밀번호" variant="standard" fullWidth value={password} onChange={handlePasswordChange} required/>
+              {(!isPasswordEmpty && isPasswordUnderEight) ? (<MDTypography fontWeight="light" color="error" variant="caption">&nbsp;&nbsp;비밀번호는 8글자 이상입니다.</MDTypography> ) : <MDTypography> </MDTypography>}
             </MDBox>
-            {(isEmailEmpty || isJobEmpty || isNameEmpty || isNicknameEmpty || isPasswordEmpty) ?  ( <MDTypography fontWeight="light" color="error" variant="caption">&nbsp;&nbsp;제대로 입력되지 않은 칸이 존재합니다.</MDTypography> ) : <MDTypography> </MDTypography>}
             <MDBox mt={4} mb={1} textAlign="center">
-              <MDButton variant="gradient" color="info" type="submit" size="large" disabled={isEmailEmpty || isJobEmpty || isNameEmpty || isNicknameEmpty || isPasswordEmpty}
-              component={Link} to={{
-                pathname: "/authentication/sign-up/create-group",
-                state: {
-                  name,
-                  nickname,
-                  job,
-                  email,
-                  password,
-                },
-              }}>
+              <MDButton variant="gradient" color="info" type="submit" size="large" disabled={isEmailEmpty || isEmailWrong || isPositionEmpty || isNameEmpty || isNicknameEmpty || isPasswordEmpty || isPasswordUnderEight}
+              component={Link} to={"/authentication/sign-up/create-group"} state = {{
+                  provider: provider,
+                  name: name,
+                  nickname: nickname,
+                  position: position,
+                  email: email,
+                  password: password
+                }}
+              >
                 새 그룹 생성
               </MDButton>
               &nbsp;&nbsp;
-              <MDButton variant="gradient" color="info" type="submit" size="large" disabled={isEmailEmpty || isJobEmpty || isNameEmpty || isNicknameEmpty || isPasswordEmpty}
-              component={Link} to={{
-                pathname: "/authentication/sign-up/join-group",
-                state: {
+              <MDButton variant="gradient" color="info" type="submit" size="large" disabled={isEmailEmpty || isEmailWrong || isPositionEmpty || isNameEmpty || isNicknameEmpty || isPasswordEmpty || isPasswordUnderEight}
+              component={Link} to={"/authentication/sign-up/join-group"}
+                state = {{
+                  provider,
                   name,
                   nickname,
-                  job,
+                  position,
                   email,
                   password,
-                },
-              }}>
+                }
+              }>
                 그룹 참가
               </MDButton>
             </MDBox>

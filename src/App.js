@@ -16,7 +16,7 @@ Coded by www.creative-tim.com
 import { useState, useEffect, useMemo } from "react";
 
 // react-router components
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation, Router } from "react-router-dom";
 
 // @mui material components
 import { ThemeProvider } from "@mui/material/styles";
@@ -47,6 +47,11 @@ import { useMaterialUIController, setMiniSidenav, setOpenConfigurator } from "co
 // Images
 import brandWhite from "assets/images/logo-ct.png";
 import brandDark from "assets/images/logo-ct-dark.png";
+
+import CreateRelease from "layouts/release/create";
+import SocialLogin from "layouts/authentication/social-login";
+
+import ViewRelease from "layouts/release/modify";
 
 export default function App() {
   const [controller, dispatch] = useMaterialUIController();
@@ -130,6 +135,20 @@ export default function App() {
     </MDBox>
   );
 
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthChecked, setIsAuthChecked] = useState(false); // New state
+
+  useEffect(() => {
+    const token = localStorage.getItem("ACCESS_TOKEN");
+    setIsAuthenticated(!!token);
+    setIsAuthChecked(true); // Set to true after checking
+  }, []);
+
+  
+  if (isAuthenticated === null) {
+    return null;
+  }
+
   return (
     <ThemeProvider theme={darkMode ? themeDark : theme}>
       <CssBaseline />
@@ -150,7 +169,10 @@ export default function App() {
       {layout === "vr" && <Configurator />}
       <Routes>
         {getRoutes(routes)}
-        <Route path="*" element={<Navigate to="/dashboard" />} />
+        <Route path="*" element={<Navigate to="/home" />} />
+        <Route path="/social-login" element={<SocialLogin />} />
+        <Route path="/release/:releaseId" element={ isAuthenticated ? <ViewRelease /> : <Navigate to="/authentication/sign-in" replace={true} />} />
+
       </Routes>
     </ThemeProvider>
   );

@@ -1,4 +1,20 @@
+
+export const IssueSearchBar = {
+  TITLE: '제목',
+  USERNAME: '담당자',
+};
+
 export const IssueType = {
+  TASK: 'task',
+  BUG: 'bug',
+  STORY: 'story',
+};
+
+export const IssueFilter = {
+  ALL : 'all',
+  DONE: 'done',
+  INPROGRESS: 'inprogress',
+
   TASK: 'task',
   BUG: 'bug',
   STORY: 'story',
@@ -21,6 +37,25 @@ export const IssuePriority = {
   MEDIUM: '3',
   LOW: '2',
   LOWEST: '1',
+};
+
+
+export const IssueSearchBarCopy = {
+  [IssueSearchBar.TITLE]: '제목',
+  [IssueSearchBar.USERNAME]: '담당자',
+};
+
+
+
+export const IssueFilterCopy = {
+  [IssueFilter.ALL]: 'all',
+  [IssueFilter.DONE] : 'done',
+  [IssueFilter.INPROGRESS]: 'inprogress',
+  
+  [IssueFilter.TASK] : 'task',
+  [IssueFilter.BUG] : 'bug',
+  [IssueFilter.STORY]: 'story',
+  
 };
 
 export const IssueTypeCopy = {
